@@ -1,0 +1,17 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Python: Current File",
+      "type": "python",
+      "request": "launch",
+      "program": "${file}",
+      "console": "integratedTerminal",
+      "justMyCode": true,
+      "env": {
+        "POSTGRES_URL": "postgresql://neondb_owner:npg_0bImiC1kvuQY@ep-dark-violet-ahydrkpx-pooler.c-3.us-east-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require",
+        "SQLSERVER_URL": "mssql+pyodbc://user:pass@localhost/sourcedb?driver=ODBC+Driver+18+for+SQL+Server"
+      }
+    }
+  ]
+}
