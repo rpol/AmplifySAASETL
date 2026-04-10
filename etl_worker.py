@@ -798,6 +798,7 @@ def etl_import_budget(job: Dict[str, Any], meta: Dict[str, Any], heartbeat_cb) -
     heartbeat_cb()
 
     meta["rows_extracted"] = int(len(df))
+    logger.info(f"[IMPORT_BUDGET] {len(df)} raw entries extracted")
 
     if df.empty:
         meta["rows_loaded"] = 0
@@ -814,15 +815,21 @@ def etl_import_budget(job: Dict[str, Any], meta: Dict[str, Any], heartbeat_cb) -
     df["scenario"] = df["scenario"].fillna("Original").astype(str).str.strip()
     df["amount"] = pd.to_numeric(df["amount"], errors="coerce").fillna(0)
 
+    # Aggregate: NAV may have multiple entries per (account, year, month, scenario)
+    agg = (
+        df.groupby(["externalAccountId", "year", "month", "scenario"], as_index=False)["amount"]
+        .sum()
+    )
+
     load_df = pd.DataFrame({
-        "id":                         [str(uuid.uuid4()) for _ in range(len(df))],
+        "id":                         [str(uuid.uuid4()) for _ in range(len(agg))],
         "organizationId":             organization_id,
         "externalChartOfAccountsId":  external_coa_id,
-        "externalAccountId":          df["externalAccountId"],
-        "year":                       df["year"],
-        "month":                      df["month"],
-        "scenario":                   df["scenario"],
-        "amount":                     df["amount"],
+        "externalAccountId":          agg["externalAccountId"],
+        "year":                       agg["year"],
+        "month":                      agg["month"],
+        "scenario":                   agg["scenario"],
+        "amount":                     agg["amount"],
         "createdAt":                  datetime.now(timezone.utc),
         "updatedAt":                  datetime.now(timezone.utc),
     })
@@ -1384,18 +1391,18 @@ def main_loop():
         #     },
         # }
 
-        # fake_job = {
-        #     "id": "DEV_JOB",
-        #     "type": "IMPORT_BUDGET",
-        #     "meta": {
-        #         "type": "IMPORT_BUDGET",
-        #         "organizationId": "satijlk99W0JpO6BD85ZrZ0qdYLhGfpT",
-        #         "externalCoaId": "nav.accumbens.coa",
-        #         "externalCoaName": "Accumbens CoA",
-        #         "navCompanyName": "ACCUMBENS SAS",
-        #         "sourceSystem": "OTHER"
-        #     },
-        # }
+        fake_job = {
+            "id": "DEV_JOB",
+            "type": "IMPORT_BUDGET",
+            "meta": {
+                "type": "IMPORT_BUDGET",
+                "organizationId": "satijlk99W0JpO6BD85ZrZ0qdYLhGfpT",
+                "externalCoaId": "nav.accumbens.coa",
+                "externalCoaName": "Accumbens CoA",
+                "navCompanyName": "ACCUMBENS SAS",
+                "sourceSystem": "OTHER"
+            },
+        }
 
         t0 = time.time()
         try:
